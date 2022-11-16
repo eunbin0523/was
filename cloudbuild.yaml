@@ -40,4 +40,4 @@ steps:
             sed -i 's|gcr.io/cloud-solutions-images/was:.*|gcr.io/$PROJECT_ID/was:$TAG_NAME|' ./k8s/*.yaml
           
           kubectl get ns was || kubectl create ns was
-          kubectl apply --namespace production --recursive -f ./k8s/
+          kubectl apply --namespace was --recursive -f ./k8s/
