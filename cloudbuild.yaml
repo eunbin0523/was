@@ -1,0 +1,43 @@
+steps:
+### Build
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker build -t asia-docker.pkg.dev/$PROJECT_ID/was-registry/was:$TAG_NAME .
+
+### Publish
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'publish'
+    entrypoint: 'bash'
+    args:
+     - '-c'
+     - |
+       docker push asia-docker.pkg.dev/$PROJECT_ID/was-registry/was:$TAG_NAME
+
+### Deploy
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_COMPUTE_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
+      - 'KUBECONFIG=/kube/config'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+          CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}
+          PROJECT=$$(gcloud config get-value core/project)
+          ZONE=${_CLOUDSDK_COMPUTE_ZONE}
+          export PROJECT_ID=$PROJECT_ID
+          export CLUSTER=tf-eb-cluster
+          export ZONE=asia-northeast3
+          gcloud container clusters get-credentials "$${CLUSTER}" \
+            --project "$${PROJECT}" \
+            --zone "$${ZONE}"  
+            sed -i 's|gcr.io/cloud-solutions-images/was:.*|gcr.io/$PROJECT_ID/was:$TAG_NAME|' ./k8s/*.yaml
+          
+          kubectl get ns fatclinic || kubectl create ns fatclinic
+          kubectl apply --namespace production --recursive -f k8s

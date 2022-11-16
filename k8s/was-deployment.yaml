@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fatclinic-was-deployment
+  labels:
+    tier: was
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: was
+  template:
+    metadata:
+      labels:
+        tier: was
+    spec:
+      containers:
+      - name: fatclinic-container
+        image: asia-docker.pkg.dev/eunoia0523/was-registry/was:1.0.1
+        ports:
+        - containerPort: 8080
+      	resources:
+          requests: 
+            memory: "100Mi"
+            cpu: "250m"
+          limits: 
+            cpu: "500m"
